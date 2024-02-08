@@ -30,6 +30,9 @@ Current implementation is for computing an ideal grasping region on point clouds
 1. Open a terminal and activate the conda environment
 
 2. Type the following command to run the file ```main.py``` and visualize the results on a CheezIt box:
-  ``` python -u main.py --filename partial_point_cloud_multiple_views/cheezit_cracker_box.ply --visualize ```
+   
+  ``` 
+  python -u main.py --filename partial_point_cloud_multiple_views/cheezit_cracker_box.ply --visualize
+```
 
 
