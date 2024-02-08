@@ -17,8 +17,19 @@ If you find this work useful please cite our work:
 
 # Installation 
 
-1. Create a workspace and clone the repository
+1. Clone the repository
 
 2. Create a conda environment using provided .yml file
 
-The repository currently contains point clouds captured from multiple camera views using Intel Realsense D415 for a CheezIt box, Domino Sugar box and a Ritz cracker box in the folder ``` \partial_point_cloud ```. 
+The repository currently contains point clouds (PLY format) captured from multiple camera views using Intel Realsense D415 for a CheezIt box, Domino Sugar box and a Ritz cracker box in the folder ``` partial_point_cloud ```. 
+
+# Usage
+
+Current implementation is for computing an ideal grasping region on point clouds of cuboidal objects for the task of pivoting the cuboidal object about one of its edges. The pivoting motion is a constant screw motion (pure rotation) about one of the edges and is represented using a screw axis. The location of the screw axis is approximated using the edges of the bounding box. 
+
+1. Open a terminal and activate the conda environment
+
+2. Type the following command to run the file ```main.py``` and visualize the results on a CheezIt box:
+  ``` python -u main.py --filename partial_point_cloud_multiple_views/cheezit_cracker_box.ply --visualize ```
+
+
