@@ -4,7 +4,7 @@ In Proceedings IROS 2023 [paper][video]
 This is the Python Implementation of neural network-based task-oriented grasp synthesis on object point clouds described in our IROS 2023 paper.
 If you find this work useful please cite our work: 
 
-'''
+```
 @inproceedings{patankar2023task,
   title={Task-Oriented Grasping with Point Cloud Representation of Objects},
   author={Patankar, Aditya and Phi, Khiem and Mahalingam, Dasharadhan and Chakraborty, Nilanjan and Ramakrishnan, IV},
@@ -13,4 +13,4 @@ If you find this work useful please cite our work:
   year={2023},
   organization={IEEE}
 }
-'''
+```
