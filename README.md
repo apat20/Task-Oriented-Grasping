@@ -1,4 +1,4 @@
-# Task Oriented Grasping with Point Cloud Representation of Objects
+# Task-Oriented Grasping with Point Cloud Representation of Objects
 In Proceedings IROS 2023 [paper][video]
 
 This is the Python Implementation of neural network-based task-oriented grasp synthesis on object point clouds described in our IROS 2023 paper.
@@ -14,3 +14,11 @@ If you find this work useful please cite our work:
   organization={IEEE}
 }
 ```
+
+# Installation 
+
+1. Create a workspace and clone the repository
+
+2. Create a conda environment using provided .yml file
+
+The repository currently contains point clouds captured from multiple camera views using Intel Realsense D415 for a CheezIt box, Domino Sugar box and a Ritz cracker box in the folder ``` \partial_point_cloud ```. 
