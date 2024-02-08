@@ -20,14 +20,14 @@ If you find this work useful please cite our work:
 1. Clone the repository
 
 ```
-	git clone git@github.com:apat20/Task-Oriented-Grasping.git
+git clone git@github.com:apat20/Task-Oriented-Grasping.git
 ```
 
 2. Create a conda environment using provided .yml file
 
 ```
-	cd Task-Oriented-Grasping
-	conda env create -f tograsp.yml
+cd Task-Oriented-Grasping
+conda env create -f tograsp.yml
 ```
 
 The repository currently contains point clouds (PLY format) captured from multiple camera views using Intel Realsense D415 for a CheezIt box, Domino Sugar box and a Ritz cracker box in the folder ``` partial_point_cloud ```. 
@@ -39,13 +39,13 @@ Current implementation is for computing an ideal grasping region on point clouds
 1. Open a terminal and activate the conda environment
 
 ```
-	conda activate tograsp
+conda activate tograsp
 ```
 
 2. Type the following command to run the file ```main.py``` and visualize the results on a CheezIt box:
    
 ``` 
-  python -u main.py --filename partial_point_cloud_multiple_views/cheezit_cracker_box.ply --visualize
+python -u main.py --filename partial_point_cloud_multiple_views/cheezit_cracker_box.ply --visualize
 ```
 
 
