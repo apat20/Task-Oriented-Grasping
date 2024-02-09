@@ -248,24 +248,9 @@ if __name__ == "__main__":
     # TASK: Pivoting a Cuboidal box:
     # Screw Parameters:
     # Axis 1:
-    cloud_object.screw_axis = np.asarray([0, -1, 0])
+    cloud_object.screw_axis = np.asarray([0, 1, 0])
     cloud_object.point = np.asarray([cloud_object.transformed_vertices_object_frame[1,0], np.divide((cloud_object.transformed_vertices_object_frame[1,1] + cloud_object.transformed_vertices_object_frame[7,1]),2), cloud_object.transformed_vertices_object_frame[1,2]])
     cloud_object.moment = np.cross(cloud_object.point, cloud_object.screw_axis)
-
-    '''# Axis 2:
-    cloud_object.screw_axis = np.asarray([1, 0, 0])
-    cloud_object.point = np.asarray([np.divide((cloud_object.transformed_vertices_object_frame[1,0] + cloud_object.transformed_vertices_object_frame[0,0]),2), cloud_object.transformed_vertices_object_frame[0,1], cloud_object.transformed_vertices_object_frame[0,2]])
-    cloud_object.moment = np.cross(cloud_object.point, cloud_object.screw_axis)'''
-
-    '''# Axis 3:
-    cloud_object.screw_axis = np.asarray([0, -1, 0])
-    cloud_object.point = np.asarray([cloud_object.transformed_vertices_object_frame[0,0], np.divide((cloud_object.transformed_vertices_object_frame[0,1] + cloud_object.transformed_vertices_object_frame[2,1]),2), cloud_object.transformed_vertices_object_frame[0,2]])
-    cloud_object.moment = np.cross(cloud_object.point, cloud_object.screw_axis)'''
-
-    '''# Axis 4:
-    cloud_object.screw_axis = np.asarray([-1, 0, 0])
-    cloud_object.point = np.asarray([np.divide((cloud_object.transformed_vertices_object_frame[2,0] + cloud_object.transformed_vertices_object_frame[7,0]),2), cloud_object.transformed_vertices_object_frame[2,1], cloud_object.transformed_vertices_object_frame[2,2]])
-    cloud_object.moment = np.cross(cloud_object.point, cloud_object.screw_axis)'''
 
     cloud_object.generate_contacts()
     

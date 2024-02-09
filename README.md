@@ -45,7 +45,7 @@ conda activate tograsp
 2. Type the following command to execute and visualize the results on a CheezIt box:
    
 ``` 
-python -u main.py --filename partial_point_cloud/cheezit_cracker_box.ply --visualize
+python -u main_pivoting.py --filename partial_point_cloud/cheezit_cracker_box.ply --visualize
 ```
 
 
