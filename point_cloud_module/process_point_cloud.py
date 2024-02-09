@@ -676,8 +676,50 @@ class point_cloud(object):
       # Efficiently sampling antipodal contacts:
       self.sampled_c1 = np.asarray([[self.transformed_vertices_object_frame[0,0], y, z] for z in self.z_axis_increments for y in self.y_axis_increments])
       self.sampled_c2 = np.asarray([[self.transformed_vertices_object_frame[1,0], y, z] for z in self.z_axis_increments for y in self.y_axis_increments])
-      self.x_data = np.asarray([np.reshape(np.asarray([[self.transformed_vertices_object_frame[0,0], y, z], [self.transformed_vertices_object_frame[1,0], y, z], self.screw_axis, self.moment]), [1,12]) for z in self.z_axis_increments for y in self.y_axis_increments])
+      self.x_data = np.asarray([np.reshape(np.asarray([[self.transformed_vertices_object_frame[0,0], y, z], [self.transformed_vertices_object_frame[1,0], y, z], 
+                                                       self.screw_axis, self.moment]), [1,12]) for z in self.z_axis_increments for y in self.y_axis_increments])
       self.x_data = np.reshape(self.x_data, [self.x_data.shape[0], self.x_data.shape[1]*self.x_data.shape[2]])
+
+      # Generate empty data for the corresponding y labels required as input to the Pytorch DataLoader class
+      self.y_data = np.zeros([len(self.y_axis_increments)*len(self.z_axis_increments), 1])
+
+   '''Function to sample contacts from the two parallel faces of the bounding box and generate the feature vector to be used as input to the
+      neural network. In this function a single datapoint has dimensions 15x1 and contains plucker as well as nonplucker coordinates.'''
+   def generate_contacts_yz_plucker_non_plucker(self):
+      # Sampling contacts as input to the neural network. We will be using the transformed points and transformed 
+      # vertices for sampling the antipodal contact locations. 
+      self.y_axis_increments = np.arange(self.transformed_vertices_object_frame[1,1], self.transformed_vertices_object_frame[7,1], self.increment)
+      self.z_axis_increments = np.arange(self.transformed_vertices_object_frame[0,2], self.transformed_vertices_object_frame[3,2], self.increment)
+
+      # Efficiently sampling antipodal contacts:
+      self.sampled_c1 = np.asarray([[self.transformed_vertices_object_frame[0,0], y, z] for z in self.z_axis_increments for y in self.y_axis_increments])
+      self.sampled_c2 = np.asarray([[self.transformed_vertices_object_frame[1,0], y, z] for z in self.z_axis_increments for y in self.y_axis_increments])
+      self.x_data = np.asarray([np.reshape(np.asarray([[self.transformed_vertices_object_frame[0,0], y, z], [self.transformed_vertices_object_frame[1,0], y, z], self.screw_axis, self.moment, self.point]), [1,15]) for z in self.z_axis_increments for y in self.y_axis_increments])
+      self.x_data = np.reshape(self.x_data, [self.x_data.shape[0], self.x_data.shape[1]*self.x_data.shape[2]])
+
+      # Generate empty data for the corresponding y labels required as input to the Pytorch DataLoader class
+      self.y_data = np.zeros([len(self.y_axis_increments)*len(self.z_axis_increments), 1])
+
+   '''Function to sample contacts from the two parallel faces of the bounding box and generate the feature vector to be used as input to the
+      neural network. In this function a single datapoint has dimensions 18x1 and contains additional features like the moment arms.'''
+   def generate_contacts_yz_additional_features(self):
+      # Sampling contacts as input to the neural network. We will be using the transformed points and transformed 
+      # vertices for sampling the antipodal contact locations. 
+      self.y_axis_increments = np.arange(self.transformed_vertices_object_frame[1,1], self.transformed_vertices_object_frame[7,1], self.increment)
+      self.z_axis_increments = np.arange(self.transformed_vertices_object_frame[0,2], self.transformed_vertices_object_frame[3,2], self.increment)
+
+      # Efficiently sampling antipodal contacts:
+      self.sampled_c1 = np.asarray([[self.transformed_vertices_object_frame[0,0], y, z] for z in self.z_axis_increments for y in self.y_axis_increments])
+      self.sampled_c2 = np.asarray([[self.transformed_vertices_object_frame[1,0], y, z] for z in self.z_axis_increments for y in self.y_axis_increments])
+      
+      self.x_data = np.zeros([self.sampled_c1.shape[0], 18])
+      for i, c1 in enumerate(self.sampled_c1):
+          self.x_data[i, :] = np.reshape(np.asarray([self.sampled_c1[i, 0], self.sampled_c1[i, 1], self.sampled_c1[i, 2], 
+                              self.sampled_c2[i, 0], self.sampled_c2[i, 1], self.sampled_c2[i, 2], 
+                              self.screw_axis[0], self.screw_axis[1], self.screw_axis[2],
+                              self.moment[0], self.moment[1], self.moment[2], 
+                              self.point[0], self.point[1],  self.point[2],
+                              la.norm(self.sampled_c1[i, :]), la.norm(self.point), la.norm((np.subtract(self.sampled_c1[i, :], self.point)))]), [1, 18])
 
       # Generate empty data for the corresponding y labels required as input to the Pytorch DataLoader class
       self.y_data = np.zeros([len(self.y_axis_increments)*len(self.z_axis_increments), 1])
@@ -692,9 +734,50 @@ class point_cloud(object):
 
       self.sampled_c1 = np.asarray([[x, self.transformed_vertices_object_frame[0,1], z] for z in self.z_axis_increments for x in self.x_axis_increments])
       self.sampled_c2 = np.asarray([[x, self.transformed_vertices_object_frame[2,1], z] for z in self.z_axis_increments for x in self.x_axis_increments])
-      self.x_data = np.asarray([np.reshape(np.asarray([[x, self.transformed_vertices_object_frame[0,1], z], [x, self.transformed_vertices_object_frame[2,1], z], self.screw_axis, self.moment]), [1,12]) for z in self.z_axis_increments for x in self.x_axis_increments])
+      self.x_data = np.asarray([np.reshape(np.asarray([[x, self.transformed_vertices_object_frame[0,1], z], [x, self.transformed_vertices_object_frame[2,1], z], 
+                                                       self.screw_axis, self.moment]), [1,12]) for z in self.z_axis_increments for x in self.x_axis_increments])
       self.x_data = np.reshape(self.x_data, [self.x_data.shape[0], self.x_data.shape[1]*self.x_data.shape[2]])
       
+      # Generate empty data for the corresponding y labels required as input to the Pytorch DataLoader class
+      self.y_data = np.zeros([len(self.x_axis_increments)*len(self.z_axis_increments), 1])
+
+
+   '''Function to sample contacts from the two parallel faces of the bounding box and generate the feature vector to be used as input to the
+      neural network. In this function a single datapoint has dimensions 15x1 and contains plucker as well as nonplucker coordinates.'''
+   def generate_contacts_xz_plucker_non_plucker(self):
+      # Sampling contacts as input to the neural network. We will be using the transformed points and transformed 
+      # vertices for sampling the antipodal contact locations. 
+      self.x_axis_increments = np.arange(self.transformed_vertices_object_frame[0,0], self.transformed_vertices_object_frame[1,0], self.increment)
+      self.z_axis_increments = np.arange(self.transformed_vertices_object_frame[0,2], self.transformed_vertices_object_frame[3,2], self.increment)
+
+      self.sampled_c1 = np.asarray([[x, self.transformed_vertices_object_frame[0,1], z] for z in self.z_axis_increments for x in self.x_axis_increments])
+      self.sampled_c2 = np.asarray([[x, self.transformed_vertices_object_frame[2,1], z] for z in self.z_axis_increments for x in self.x_axis_increments])
+      self.x_data = np.asarray([np.reshape(np.asarray([[x, self.transformed_vertices_object_frame[0,1], z], [x, self.transformed_vertices_object_frame[2,1], z], self.screw_axis, self.moment, self.point]), [1,15]) for z in self.z_axis_increments for x in self.x_axis_increments])
+      self.x_data = np.reshape(self.x_data, [self.x_data.shape[0], self.x_data.shape[1]*self.x_data.shape[2]])
+
+      # Generate empty data for the corresponding y labels required as input to the Pytorch DataLoader class
+      self.y_data = np.zeros([len(self.x_axis_increments)*len(self.z_axis_increments), 1])
+
+   '''Function to sample contacts from the two parallel faces of the bounding box and generate the feature vector to be used as input to the
+      neural network. In this function a single datapoint has dimensions 18x1 and contains additional features like the moment arms.'''
+   def generate_contacts_xz_additional_features(self):
+      # Sampling contacts as input to the neural network. We will be using the transformed points and transformed 
+      # vertices for sampling the antipodal contact locations. 
+      self.x_axis_increments = np.arange(self.transformed_vertices_object_frame[0,0], self.transformed_vertices_object_frame[1,0], self.increment)
+      self.z_axis_increments = np.arange(self.transformed_vertices_object_frame[0,2], self.transformed_vertices_object_frame[3,2], self.increment)
+
+      self.sampled_c1 = np.asarray([[x, self.transformed_vertices_object_frame[0,1], z] for z in self.z_axis_increments for x in self.x_axis_increments])
+      self.sampled_c2 = np.asarray([[x, self.transformed_vertices_object_frame[2,1], z] for z in self.z_axis_increments for x in self.x_axis_increments])
+
+      self.x_data = np.zeros([self.sampled_c1.shape[0], 18])
+      for i, c1 in enumerate(self.sampled_c1):
+          self.x_data[i, :] = np.reshape(np.asarray([self.sampled_c1[i, 0], self.sampled_c1[i, 1], self.sampled_c1[i, 2], 
+                              self.sampled_c2[i, 0], self.sampled_c2[i, 1], self.sampled_c2[i, 2], 
+                              self.screw_axis[0], self.screw_axis[1], self.screw_axis[2],
+                              self.moment[0], self.moment[1], self.moment[2], 
+                              self.point[0], self.point[1],  self.point[2],
+                              la.norm(self.sampled_c1[i, :]), la.norm(self.point), la.norm((np.subtract(self.sampled_c1[i, :], self.point)))]), [1, 18])
+
       # Generate empty data for the corresponding y labels required as input to the Pytorch DataLoader class
       self.y_data = np.zeros([len(self.x_axis_increments)*len(self.z_axis_increments), 1])
 
@@ -704,10 +787,14 @@ class point_cloud(object):
        self.increment = 0.01
        if self.y_dim < self.gripper_width_tolerance:
            print('Generating contacts along XZ plane')
-           self.generate_contacts_xz()
+           # self.generate_contacts_xz()
+           # self.generate_contacts_xz_plucker_non_plucker()
+           self.generate_contacts_xz_additional_features()
        elif self.x_dim < self.gripper_width_tolerance:
            print('Generating contacts along YZ plane')
-           self.generate_contacts_yz()
+           # self.generate_contacts_yz()
+           # self.generate_contacts_yz_plucker_non_plucker()
+           self.generate_contacts_yz_additional_features()
        elif self.x_dim < self.gripper_width_tolerance and self.y_dim < self.gripper_width_tolerance:
            print('Both dimensions with gripper width tolerance. Generating contacts along XZ plane')
        else:
@@ -792,7 +879,9 @@ class point_cloud(object):
       # Batch size to divide the dataset into batches:
       # Hyperparameters that are part of the pointCloud class
       self.batch_size = 400
-      self.input_size = 12
+      # elf.input_size = 12
+      # self.input_size = 15
+      self.input_size = 18
 
       # Specifying the seed:
       seed = 3
@@ -812,10 +901,22 @@ class point_cloud(object):
       
       ## Dataset: Variation 1
       # Plucker:
-      best_weights = 'depth_8_norm_batch_act_relu_residual_True_input_12_test_all_train_variation_1_plucker_extra_False.pth'
+      # best_weights = 'depth_8_norm_batch_act_relu_residual_True_input_12_test_all_train_variation_1_plucker_extra_False.pth'
       
+      # Non-Plucker
+
+      # Additional Features:
+      best_weights = 'depth_8_norm_batch_act_relu_residual_True_input_18_test_all_train_variation_1_additional_features_extra_True.pth'
+
+      ## Dataset: Variation 2
+      # Plucker:
+      #
+
       # Non-Plucker:
       # best_weights = 'depth_8_norm_batch_act_relu_residual_True_input_12_test_all_train_variation_2_plucker_extra_False.pth'
+
+      # Additional Features:
+      # best_weights = 'depth_8_norm_batch_act_relu_residual_True_input_18_test_all_train_variation_2_additional_features_extra_True.pth'
 
       # Loading the trained models: 
       PATH = 'Trained_Models/' + best_weights

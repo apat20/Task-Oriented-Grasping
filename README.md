@@ -42,10 +42,10 @@ Current implementation is for computing an ideal grasping region on point clouds
 conda activate tograsp
 ```
 
-2. Type the following command to run the file ```main.py``` and visualize the results on a CheezIt box:
+2. Type the following command to execute and visualize the results on a CheezIt box:
    
 ``` 
-python -u main.py --filename partial_point_cloud_multiple_views/cheezit_cracker_box.ply --visualize
+python -u main.py --filename partial_point_cloud/cheezit_cracker_box.ply --visualize
 ```
 
 
