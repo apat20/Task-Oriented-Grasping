@@ -233,8 +233,12 @@ if __name__ == "__main__":
     cloud_object = build_cloud_object(cloud_object, pcd)
 
     # Specifying gripper tolerances:
-    cloud_object.gripper_width_tolerance = 0.11
-    cloud_object.gripper_height_tolerance = 0.07
+    cloud_object.gripper_width_tolerance = 0.08
+    cloud_object.gripper_height_tolerance = 0.041
+
+    # Attributes to compute the location of the reference frame at the flange for the grasp pose and pre-grasp pose
+    cloud_object.g_delta = 0.0625
+    cloud_object.g_delta_inter = 0.0925
 
     # STARTING TOTAL TIME:
     total_time_start = perf_counter()

@@ -181,6 +181,7 @@ class point_cloud(object):
       self.gripper_height_tolerance = None
 
       # Additional attributes for computing the location corresponding to the grasp pose and pre-grasp pose:
+      # For further information please refer to the documentation or Section IV. C of the IROS paper
       self.g_delta = None
       self.g_delta_inter = None
 
@@ -1555,8 +1556,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u1))
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u1))    
+               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u1))
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u1))    
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
@@ -1621,8 +1622,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u2))
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u2)) 
+               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u2))
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u2)) 
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
@@ -1686,8 +1687,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u3))
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u3)) 
+               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u3))
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u3)) 
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
@@ -1797,8 +1798,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u1)) 
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u1))  
+               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u1)) 
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u1))  
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
@@ -1862,8 +1863,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u2))
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u2)) 
+               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u2))
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u2)) 
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
@@ -1927,8 +1928,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u3))
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u3)) 
+               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u3))
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u3)) 
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
