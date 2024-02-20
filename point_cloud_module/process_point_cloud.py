@@ -1067,7 +1067,7 @@ class point_cloud(object):
                                       x[4].item(), x[5].item(), x[6].item(), x[7].item(), 
                                       x[8].item(), x[9].item(), x[10].item(), x[11].item()])])
 
-      self.grid_points = np.around(np.asarray([np.reshape(np.asarray([x, z]), [2,1]) for z in self.z_axis_increments for x in self.x_axis_increments]), 3)
+      self.grid_points = np.around(np.asarray([np.reshape(np.asarray([y, z]), [2,1]) for z in self.z_axis_increments for y in self.y_axis_increments]), 3)
       
       # Create a dictionary of grid points and metric_values 
       dictionary_grid_points = {}
