@@ -48,4 +48,6 @@ conda activate tograsp
 python -u main_pivoting.py --filename partial_point_cloud/cheezit_cracker_box.ply --visualize
 ```
 
+3. Documentation on computing the end-effector poses corresponding to the ideal grasping region can be found in the folder ```docs```.
+
 
