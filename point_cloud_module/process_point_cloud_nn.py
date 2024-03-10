@@ -1,5 +1,3 @@
-# By: Aditya Patankar
-
 # Open3D for point cloud processing and visualization
 import open3d as o3d
 
@@ -94,7 +92,7 @@ class point_cloud(object):
       self.moment = None
 
       # Attributes associated with sampling contact locations on the bounding box
-      self.increment = None
+      self.increment = 0.01
       self.x_axis_increments = None
       self.y_axis_increments = None
       self.z_axis_increments = None
@@ -158,11 +156,6 @@ class point_cloud(object):
       self.q_y_array = None
       self.q_z_array = None
 
-      # Attributes to store the center of the grids:
-      self.grid_centers = None
-      self.grid_centers_matrix = None
-      self.grid_centers_occupied = None
-
       # Attributes associated with sampling object-robot contacts and end-effector reference frames:
       self.num_points = None
 
@@ -189,11 +182,6 @@ class point_cloud(object):
 
       # Scalar value to avoid the gripper from colliding with the object while grasping
       self.gripper_height_tolerance = None
-
-      # Additional attributes for computing the location corresponding to the grasp pose and pre-grasp pose:
-      # For further information please refer to the documentation or Section IV. C of the IROS paper
-      self.g_delta = None
-      self.g_delta_inter = None
 
       # List to store the computed end-effector poses with respect to the object reference frame. 
       self.computed_end_effector_poses = None
@@ -277,7 +265,7 @@ class point_cloud(object):
 
       # Position of the contact references frame:
       self.position_C1 = None
-      self.position_C2 = None
+      self.position_c2 = None
 
       # Pose of the end-effector reference expressed as a 4x4 matrix (element of SE(3)):
       # Note: The pose of the contact reference frames is expressed with respect to the object reference frame. 
@@ -503,6 +491,7 @@ class point_cloud(object):
    '''Function to compute the oriented bounding box using the rotating calipers algorithm 
       after all the points have been transferred to the object base frame computed using the 
       axis aligned bounding box:'''
+   
    def compute_obb_rotating_calipers(self):
       projected_points_object_frame = np.zeros([self.transformed_points_object_frame.shape[0], self.transformed_points_object_frame.shape[1]])
     
@@ -1118,7 +1107,7 @@ class point_cloud(object):
                                       x[4].item(), x[5].item(), x[6].item(), x[7].item(), 
                                       x[8].item(), x[9].item(), x[10].item(), x[11].item()])])
 
-      self.grid_points = np.around(np.asarray([np.reshape(np.asarray([y, z]), [2,1]) for z in self.z_axis_increments for y in self.y_axis_increments]), 3)
+      self.grid_points = np.around(np.asarray([np.reshape(np.asarray([x, z]), [2,1]) for z in self.z_axis_increments for x in self.x_axis_increments]), 3)
       
       # Create a dictionary of grid points and metric_values 
       dictionary_grid_points = {}
@@ -1493,6 +1482,7 @@ class point_cloud(object):
       
         self.ideal_grasping_region_metric_values = np.asarray([self.grid_metric_values_occupied[i] for i in range(0, self.grid_metric_values_occupied.shape[0]) if self.grid_metric_values_occupied[i] >= self.eta_threshold])
         self.ideal_grasping_region_indices = [i for i in range(0, self.grid_metric_values_occupied.shape[0]) if self.grid_metric_values_occupied[i] >= self.eta_threshold]
+        # self.ideal_grasping_region_grid_centers = [self.grid_centers_occupied[i, :] for i in range(0, self.grid_metric_values_occupied.shape[0]) if self.grid_metric_values_occupied[i] >= self.eta_threshold] 
         self.ideal_grasping_region_grid_centers = [gc for gc in self.grid_centers_unique if self.grid_centers_unique_dict[tuple([gc[0].item(), gc[1].item(),])] >= self.eta_threshold]
                 
         self.ideal_grasping_region_points = self.transformed_points_object_frame[self.ideal_grasping_region_indices, :]
@@ -1516,6 +1506,7 @@ class point_cloud(object):
       # Using the dimensions of the newer bounding box of the ideal grasping region:
       
    '''Function to COMPUTE end effector poses based on the predicted metric values.'''
+   # This function needs to be modified and updated: 
    def get_end_effector_poses(self):
 
       # Saving the sampled end effector poses:
@@ -1608,8 +1599,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u1))
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u1))    
+               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u1))
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u1))    
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
@@ -1674,8 +1665,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u2))
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u2)) 
+               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u2))
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u2)) 
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
@@ -1739,8 +1730,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u3))
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u3)) 
+               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u3))
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u3)) 
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
@@ -1850,8 +1841,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u1)) 
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u1))  
+               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u1)) 
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u1))  
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
@@ -1915,8 +1906,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u2))
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u2)) 
+               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u2))
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u2)) 
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
@@ -1980,8 +1971,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u3))
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u3)) 
+               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u3))
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u3)) 
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
@@ -2124,12 +2115,6 @@ class point_cloud(object):
    def plot_reference_frames(self, ax):
       ax.quiver(self.p[0], self.p[1], self.p[2], self.scale_value*self.R[0, 0], self.scale_value*self.R[1, 0], self.scale_value*self.R[2, 0], color = "r", arrow_length_ratio = self.length_value)
       ax.quiver(self.p[0], self.p[1], self.p[2], self.scale_value*self.R[0, 1], self.scale_value*self.R[1, 1], self.scale_value*self.R[2, 1], color = "g", arrow_length_ratio = self.length_value)
-      ax.quiver(self.p[0], self.p[1], self.p[2], self.scale_value*self.R[0, 2], self.scale_value*self.R[1, 2], self.scale_value*self.R[2, 2], color = "b", arrow_length_ratio = self.length_value)
-      return ax
-   
-   '''Function to plot just 2 axes and the location:'''
-   #NOTE: The two axes being ploted are the Y and Z axis corresponding to the end-effector reference frame:
-   def plot_two_axes(self, ax):
-      ax.quiver(self.p[0], self.p[1], self.p[2], self.scale_value*self.R[0, 0], self.scale_value*self.R[0, 1], self.scale_value*self.R[0, 2], color = "b", arrow_length_ratio = self.length_value)
-      ax.quiver(self.p[0], self.p[1], self.p[2], self.scale_value*self.R[1, 0], self.scale_value*self.R[1, 1], self.scale_value*self.R[1, 2], color = "g", arrow_length_ratio = self.length_value)
+      ax.quiver(self.p[0], self.p[1], self.p[2], self.scale_value*self.R[0, 2], self.scale_value*self.R[1, 2], self.scale_value*self.R[2, 2], color = "b", arrow_length_ratio = self.length_value )
+      
       return ax

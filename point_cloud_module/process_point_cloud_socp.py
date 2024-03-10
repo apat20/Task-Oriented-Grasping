@@ -1,5 +1,3 @@
-# By: Aditya Patankar
-
 # Open3D for point cloud processing and visualization
 import open3d as o3d
 
@@ -140,16 +138,6 @@ class point_cloud(object):
       self.metric_grid = None
       self.grid_metric_values_occupied = None
 
-      # Attributes to store the center of the grids:
-      self.grid_centers = None
-      self.grid_centers_matrix = None
-      self.grid_centers_occupied = None
-
-      # Additional attributes included for improving the efficiency:
-      self.grid_centers_unique = None
-      self.grid_centers_unique_dict = None
-      self.grid_centers_dict = None
-
       self.x_counter = None
       self.y_counter = None
       self.z_counter = None
@@ -189,11 +177,6 @@ class point_cloud(object):
 
       # Scalar value to avoid the gripper from colliding with the object while grasping
       self.gripper_height_tolerance = None
-
-      # Additional attributes for computing the location corresponding to the grasp pose and pre-grasp pose:
-      # For further information please refer to the documentation or Section IV. C of the IROS paper
-      self.g_delta = None
-      self.g_delta_inter = None
 
       # List to store the computed end-effector poses with respect to the object reference frame. 
       self.computed_end_effector_poses = None
@@ -277,7 +260,7 @@ class point_cloud(object):
 
       # Position of the contact references frame:
       self.position_C1 = None
-      self.position_C2 = None
+      self.position_c2 = None
 
       # Pose of the end-effector reference expressed as a 4x4 matrix (element of SE(3)):
       # Note: The pose of the contact reference frames is expressed with respect to the object reference frame. 
@@ -503,6 +486,7 @@ class point_cloud(object):
    '''Function to compute the oriented bounding box using the rotating calipers algorithm 
       after all the points have been transferred to the object base frame computed using the 
       axis aligned bounding box:'''
+   
    def compute_obb_rotating_calipers(self):
       projected_points_object_frame = np.zeros([self.transformed_points_object_frame.shape[0], self.transformed_points_object_frame.shape[1]])
     
@@ -672,7 +656,7 @@ class point_cloud(object):
       self.dimensions[0] = self.x_dim
       self.dimensions[1] = self.y_dim
       self.dimensions[2] = self.z_dim
-
+      
    '''Function to compute the bounding box: '''
    def compute_bounding_box(self):
        # The object is aligned with the axis of the world/robot base reference frame.
@@ -1100,26 +1084,8 @@ class point_cloud(object):
       self.y_counter = 0
       self.z_counter = 0
       counter = 0
-      
-      # Create a dictionary of test_datapoints and predicted metric values. 
-      '''This is being done to access the predicted metric values so that it can efficiently used for grid generation'''
-      dictionary_test_data = {}
-      for test_point, label in zip(self.test_datapoints, self.predicted):
-          test_point = np.around(test_point, 3)
-          dictionary_test_data[tuple([test_point[0].item(), test_point[1].item(), test_point[2].item(), test_point[3].item(), 
-                                      test_point[4].item(), test_point[5].item(),test_point[6].item(), test_point[7].item(), 
-                                      test_point[8].item(), test_point[9].item(), test_point[10].item(), test_point[11].item()])] = label.item()
-          
-      # Query the dictionary for x_data to get the corresponding metric_values: 
-      self.metric_values = np.zeros([self.predicted.shape[0], self.predicted.shape[1]])
-      for i, x in enumerate(self.x_data):
-          x = np.around(x, 3)    
-          self.metric_values[i, :] = np.asarray(dictionary_test_data[tuple([x[0].item(), x[1].item(), x[2].item(), x[3].item(), 
-                                      x[4].item(), x[5].item(), x[6].item(), x[7].item(), 
-                                      x[8].item(), x[9].item(), x[10].item(), x[11].item()])])
 
       self.grid_points = np.around(np.asarray([np.reshape(np.asarray([y, z]), [2,1]) for z in self.z_axis_increments for y in self.y_axis_increments]), 3)
-      
       # Create a dictionary of grid points and metric_values 
       dictionary_grid_points = {}
       for grid_point, metric_value in zip(self.grid_points, self.metric_values):
@@ -1199,23 +1165,6 @@ class point_cloud(object):
       self.x_counter = 0
       self.z_counter = 0
       counter = 0
-
-      # Create a dictionary of test_datapoints and predicted metric values.
-      '''This is being done to access the predicted metric values so that it can efficiently used for grid generation'''
-      dictionary_test_data = {}
-      for test_point, label in zip(self.test_datapoints, self.predicted):
-          test_point = np.around(test_point, 3)
-          dictionary_test_data[tuple([test_point[0].item(), test_point[1].item(), test_point[2].item(), test_point[3].item(), 
-                                      test_point[4].item(), test_point[5].item(),test_point[6].item(), test_point[7].item(), 
-                                      test_point[8].item(), test_point[9].item(), test_point[10].item(), test_point[11].item()])] = label.item()
-          
-      # Query the dictionary for x_data to get the corresponding metric_values: 
-      self.metric_values = np.zeros([self.predicted.shape[0], self.predicted.shape[1]])
-      for i, x in enumerate(self.x_data):
-          x = np.around(x, 3)    
-          self.metric_values[i, :] = np.asarray(dictionary_test_data[tuple([x[0].item(), x[1].item(), x[2].item(), x[3].item(), 
-                                      x[4].item(), x[5].item(), x[6].item(), x[7].item(), 
-                                      x[8].item(), x[9].item(), x[10].item(), x[11].item()])])
       
       self.grid_points = np.around(np.asarray([np.reshape(np.asarray([x, z]), [2,1]) for z in self.z_axis_increments for x in self.x_axis_increments]), 3)
       # Create a dictionary of grid points and metric_values 
@@ -1319,8 +1268,6 @@ class point_cloud(object):
       self.Z_grid_points_occupied = np.zeros([self.projected_points.shape[0], self.Z_grid_points.shape[1]])
       self.grid_centers_occupied = np.zeros([self.projected_points.shape[0], self.grid_centers.shape[1]])
       self.grid_metric_values_occupied = np.zeros([self.projected_points.shape[0], 1])
-      self.grid_centers_dict = {}
-      self.grid_centers_unique_dict = {}
 
       # Arrays to store the q_y and q_z values so that they can be studied and understood properly:
       self.q_x_array = np.zeros([self.projected_points.shape[0], 1])
@@ -1353,16 +1300,9 @@ class point_cloud(object):
                self.Y_grid_points_occupied[i, :] = np.reshape(self.Y_grid_points_matrix[q_y, q_z, :], [1,4])
                self.Z_grid_points_occupied[i, :] = np.reshape(self.Z_grid_points_matrix[q_y, q_z, :], [1,4])
                self.grid_centers_occupied[i, :] = np.reshape(self.grid_centers_matrix[q_y, q_z, :], [1,2])
-               self.grid_metric_values_occupied[i, :] = np.reshape(self.grid_metric_values[q_y, q_z, :], [1])
-               self.grid_centers_dict[tuple([self.grid_centers_occupied[i, 0].item(), self.grid_centers_occupied[i, 1].item()])] = self.grid_metric_values_occupied[i, :].item()
+               self.grid_metric_values_occupied[i, :] = np.reshape(self.grid_metric_values[q_y, q_z, :], [1])     
          else:
             continue
-      
-      # Extracting the unique grid centers and corresponding metric values and storing them in a dictionary.
-      self.grid_centers_unique = np.unique(self.grid_centers_occupied, axis = 0)
-      for i, grid_center in enumerate(self.grid_centers_unique):
-         self.grid_centers_unique_dict[tuple([grid_center[0].item(), grid_center[1].item()])] = self.grid_centers_dict[tuple([grid_center[0].item(), grid_center[1].item()])]
-
 
    ''' Function to check the occupancy of the the point corresponding to the point cloud within the generate grid:'''
    def check_occupancy_xz(self):
@@ -1395,8 +1335,6 @@ class point_cloud(object):
       self.Z_grid_points_occupied = np.zeros([self.projected_points.shape[0], self.Z_grid_points.shape[1]])
       self.grid_centers_occupied = np.zeros([self.projected_points.shape[0], self.grid_centers.shape[1]])
       self.grid_metric_values_occupied = np.zeros([self.projected_points.shape[0], 1])
-      self.grid_centers_dict = {}
-      self.grid_centers_unique_dict = {}
 
       # Arrays to store the q_y and q_z values so that they can be studied and understood properly:
       self.q_x_array = np.zeros([self.projected_points.shape[0], 1])
@@ -1430,15 +1368,9 @@ class point_cloud(object):
                self.X_grid_points_occupied[i, :] = np.reshape(self.X_grid_points_matrix[q_x, q_z, :], [1,4])
                self.Z_grid_points_occupied[i, :] = np.reshape(self.Z_grid_points_matrix[q_x, q_z, :], [1,4])
                self.grid_centers_occupied[i, :] = np.reshape(self.grid_centers_matrix[q_x, q_z, :], [1,2])
-               self.grid_metric_values_occupied[i, :] = np.reshape(self.grid_metric_values[q_x, q_z, :], [1]) 
-               self.grid_centers_dict[tuple([self.grid_centers_occupied[i, 0].item(), self.grid_centers_occupied[i, 1].item()])] = self.grid_metric_values_occupied[i, :].item()      
+               self.grid_metric_values_occupied[i, :] = np.reshape(self.grid_metric_values[q_x, q_z, :], [1])     
          else:
             continue
-      
-      # Extracting the unique grid centers and corresponding metric values and storing them in a dictionary.
-      self.grid_centers_unique = np.unique(self.grid_centers_occupied, axis = 0)
-      for i, grid_center in enumerate(self.grid_centers_unique):
-         self.grid_centers_unique_dict[tuple([grid_center[0].item(), grid_center[1].item()])] = self.grid_centers_dict[tuple([grid_center[0].item(), grid_center[1].item()])]
 
    '''Function to compute the distance from a point to a plane'''
    def get_distance(self, plane_points, center_point, grasp_center):
@@ -1487,14 +1419,14 @@ class point_cloud(object):
 
         # The metric threshold value is set to be 90% of the max metric value. All the points with a metric value higher than the threshold 
         # value are part of the ideal grasping region. 
-        self.eta_threshold = 0.85*self.max_metric_value
-        # self.eta_threshold = 0.7*self.max_metric_value
+        # self.eta_threshold = 0.85*self.max_metric_value
+        self.eta_threshold = 0.7*self.max_metric_value
         # self.eta_threshold = self.max_metric_value
       
         self.ideal_grasping_region_metric_values = np.asarray([self.grid_metric_values_occupied[i] for i in range(0, self.grid_metric_values_occupied.shape[0]) if self.grid_metric_values_occupied[i] >= self.eta_threshold])
         self.ideal_grasping_region_indices = [i for i in range(0, self.grid_metric_values_occupied.shape[0]) if self.grid_metric_values_occupied[i] >= self.eta_threshold]
-        self.ideal_grasping_region_grid_centers = [gc for gc in self.grid_centers_unique if self.grid_centers_unique_dict[tuple([gc[0].item(), gc[1].item(),])] >= self.eta_threshold]
-                
+        self.ideal_grasping_region_grid_centers = [self.grid_centers_occupied[i, :] for i in range(0, self.grid_metric_values_occupied.shape[0]) if self.grid_metric_values_occupied[i] >= self.eta_threshold]
+
         self.ideal_grasping_region_points = self.transformed_points_object_frame[self.ideal_grasping_region_indices, :]
         self.ideal_grasping_region_normals = self.normals_object_frame[self.ideal_grasping_region_indices, :]
        
@@ -1516,6 +1448,7 @@ class point_cloud(object):
       # Using the dimensions of the newer bounding box of the ideal grasping region:
       
    '''Function to COMPUTE end effector poses based on the predicted metric values.'''
+   # This function needs to be modified and updated: 
    def get_end_effector_poses(self):
 
       # Saving the sampled end effector poses:
@@ -1533,23 +1466,22 @@ class point_cloud(object):
       self.approach_dir_2_inter_poses = []
       self.approach_dir_other_poses = []
       self.approach_dir_other_inter_poses = []
+   
+      # Outer conditional statement to check whether the dimensions along which we are grasping are less than the gripper width tolerance:
+      if self.y_dim < self.gripper_width_tolerance:
+         # Approach Direction 2:
+         self.plane_points_1 = np.asarray([self.transformed_vertices_object_frame[3], self.transformed_vertices_object_frame[6], self.transformed_vertices_object_frame[4], self.transformed_vertices_object_frame[5]])
+         # Approach direction 3:
+         self.plane_points_2 = np.asarray([self.transformed_vertices_object_frame[3], self.transformed_vertices_object_frame[5], self.transformed_vertices_object_frame[2], self.transformed_vertices_object_frame[0]])
+         # Approach direction 5:
+         self.plane_points_3 = np.asarray([self.transformed_vertices_object_frame[6], self.transformed_vertices_object_frame[1], self.transformed_vertices_object_frame[7], self.transformed_vertices_object_frame[4]])
+         
+         # Center points of each of the planes corresponding to the three approach directions:
+         self.center_point_plane_1 = np.asarray([self.p_base[0], self.p_base[1], self.plane_points_1[0, 2]])
+         self.center_point_plane_2 = np.asarray([self.plane_points_2[0, 0], self.p_base[1], self.p_base[2]])
+         self.center_point_plane_3 = np.asarray([self.plane_points_3[0, 0], self.p_base[1], self.p_base[2]])
 
-      for i,v in enumerate(self.ideal_grasping_region_grid_centers):
-          
-         # Outer conditional statement to check whether the dimensions along which we are grasping are less than the gripper width tolerance:
-         if self.y_dim < self.gripper_width_tolerance:
-            # Approach Direction 2:
-            self.plane_points_1 = np.asarray([self.transformed_vertices_object_frame[3], self.transformed_vertices_object_frame[6], self.transformed_vertices_object_frame[4], self.transformed_vertices_object_frame[5]])
-            # Approach direction 3:
-            self.plane_points_2 = np.asarray([self.transformed_vertices_object_frame[3], self.transformed_vertices_object_frame[5], self.transformed_vertices_object_frame[2], self.transformed_vertices_object_frame[0]])
-            # Approach direction 5:
-            self.plane_points_3 = np.asarray([self.transformed_vertices_object_frame[6], self.transformed_vertices_object_frame[1], self.transformed_vertices_object_frame[7], self.transformed_vertices_object_frame[4]])
-            
-            # Center points of each of the planes corresponding to the three approach directions:
-            self.center_point_plane_1 = np.asarray([self.p_base[0], self.p_base[1], self.plane_points_1[0, 2]])
-            self.center_point_plane_2 = np.asarray([self.plane_points_2[0, 0], self.p_base[1], self.p_base[2]])
-            self.center_point_plane_3 = np.asarray([self.plane_points_3[0, 0], self.p_base[1], self.p_base[2]])
-
+         for i in range(len(self.ideal_grasping_region_grid_centers)):
             # Orientation of the contact reference frames: 
             # Getting an orthogonal reference frame where the z axis is along the normal: 
             # Frame C1:
@@ -1608,8 +1540,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u1))
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u1))    
+               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u1))
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u1))    
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
@@ -1674,8 +1606,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u2))
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u2)) 
+               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u2))
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u2)) 
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
@@ -1739,8 +1671,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u3))
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u3)) 
+               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u3))
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u3)) 
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
@@ -1778,20 +1710,21 @@ class point_cloud(object):
                # Additional attribute for experimental purposes:
                self.approach_dir_other_poses.append(self.gripper_pose)
                self.approach_dir_other_inter_poses.append(self.gripper_pose_inter)
+          
+      # Outer conditional statement to check whether the dimensions along which we are grasping are less than the gripper width tolerance:
+      if self.x_dim < self.gripper_width_tolerance:
+         # Approach Direction 2:
+         self.plane_points_1 = np.asarray([self.transformed_vertices_object_frame[3], self.transformed_vertices_object_frame[6], self.transformed_vertices_object_frame[4], self.transformed_vertices_object_frame[5]])
+         # Approach Direction 1:
+         self.plane_points_2 = np.asarray([self.transformed_vertices_object_frame[3], self.transformed_vertices_object_frame[0], self.transformed_vertices_object_frame[1], self.transformed_vertices_object_frame[6]])
+         # Approach Direction 4:
+         self.plane_points_3 = np.asarray([self.transformed_vertices_object_frame[4], self.transformed_vertices_object_frame[7], self.transformed_vertices_object_frame[2], self.transformed_vertices_object_frame[5]])
 
-         # Outer conditional statement to check whether the dimensions along which we are grasping are less than the gripper width tolerance:
-         if self.x_dim < self.gripper_width_tolerance:
-            # Approach Direction 2:
-            self.plane_points_1 = np.asarray([self.transformed_vertices_object_frame[3], self.transformed_vertices_object_frame[6], self.transformed_vertices_object_frame[4], self.transformed_vertices_object_frame[5]])
-            # Approach Direction 1:
-            self.plane_points_2 = np.asarray([self.transformed_vertices_object_frame[3], self.transformed_vertices_object_frame[0], self.transformed_vertices_object_frame[1], self.transformed_vertices_object_frame[6]])
-            # Approach Direction 4:
-            self.plane_points_3 = np.asarray([self.transformed_vertices_object_frame[4], self.transformed_vertices_object_frame[7], self.transformed_vertices_object_frame[2], self.transformed_vertices_object_frame[5]])
+         self.center_point_plane_1 = np.asarray([self.p_base[0], self.p_base[1], self.plane_points_1[0, 2]])
+         self.center_point_plane_2 = np.asarray([self.p_base[0], self.plane_points_2[0, 1], self.p_base[2]])
+         self.center_point_plane_3 = np.asarray([self.p_base[0], self.plane_points_3[0, 1], self.p_base[2]])
 
-            self.center_point_plane_1 = np.asarray([self.p_base[0], self.p_base[1], self.plane_points_1[0, 2]])
-            self.center_point_plane_2 = np.asarray([self.p_base[0], self.plane_points_2[0, 1], self.p_base[2]])
-            self.center_point_plane_3 = np.asarray([self.p_base[0], self.plane_points_3[0, 1], self.p_base[2]]) 
-
+         for i in range(len(self.ideal_grasping_region_grid_centers)):
             # Orientation of the contact reference frames: 
             # Getting an orthogonal reference frame where the z axis is along the normal: 
             # Frame C1:
@@ -1850,8 +1783,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u1)) 
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u1))  
+               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u1)) 
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u1))  
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
@@ -1915,8 +1848,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u2))
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u2)) 
+               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u2))
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u2)) 
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
@@ -1980,8 +1913,8 @@ class point_cloud(object):
                self.R_EE_inter = self.R_EE
 
                # End Effector Position: 
-               self.p_EE = np.add(self.grasp_center, np.dot(-1*(self.g_delta + self.gripper_height_tolerance), self.unit_u3))
-               self.p_EE_inter = np.add(self.grasp_center, np.dot(-1*(self.g_delta_inter + self.gripper_height_tolerance), self.unit_u3)) 
+               self.p_EE = np.add(self.grasp_center, np.dot(-0.1434, self.unit_u3))
+               self.p_EE_inter = np.add(self.grasp_center, np.dot(-0.1800, self.unit_u3)) 
 
                # End Effector pose as an element of SE(3) (4x4 transformation matrix):
                self.gripper_pose = np.zeros([4,4])
@@ -2019,7 +1952,7 @@ class point_cloud(object):
                # Additional attribute for experimental purposes:
                self.approach_dir_other_poses.append(self.gripper_pose)
                self.approach_dir_other_inter_poses.append(self.gripper_pose_inter)
-      
+
       # Transforming the sampled end-effector poses back to the base reference frame.
       self.computed_end_effector_poses_base = []
       self.computed_end_effector_poses_inter_base = []
@@ -2099,6 +2032,9 @@ class point_cloud(object):
          self.gripper_pose_inter_base[3,3] = 1
          self.approach_dir_other_inter_poses_base.append(self.gripper_pose_inter_base)
 
+      # Transforming the screw parameters to the base reference frame: 
+      
+
    ''' Function for plotting a CUBE:'''
    def plot_cube(self):
       # Processing the faces for the cube: 
@@ -2124,12 +2060,6 @@ class point_cloud(object):
    def plot_reference_frames(self, ax):
       ax.quiver(self.p[0], self.p[1], self.p[2], self.scale_value*self.R[0, 0], self.scale_value*self.R[1, 0], self.scale_value*self.R[2, 0], color = "r", arrow_length_ratio = self.length_value)
       ax.quiver(self.p[0], self.p[1], self.p[2], self.scale_value*self.R[0, 1], self.scale_value*self.R[1, 1], self.scale_value*self.R[2, 1], color = "g", arrow_length_ratio = self.length_value)
-      ax.quiver(self.p[0], self.p[1], self.p[2], self.scale_value*self.R[0, 2], self.scale_value*self.R[1, 2], self.scale_value*self.R[2, 2], color = "b", arrow_length_ratio = self.length_value)
-      return ax
-   
-   '''Function to plot just 2 axes and the location:'''
-   #NOTE: The two axes being ploted are the Y and Z axis corresponding to the end-effector reference frame:
-   def plot_two_axes(self, ax):
-      ax.quiver(self.p[0], self.p[1], self.p[2], self.scale_value*self.R[0, 0], self.scale_value*self.R[0, 1], self.scale_value*self.R[0, 2], color = "b", arrow_length_ratio = self.length_value)
-      ax.quiver(self.p[0], self.p[1], self.p[2], self.scale_value*self.R[1, 0], self.scale_value*self.R[1, 1], self.scale_value*self.R[1, 2], color = "g", arrow_length_ratio = self.length_value)
+      ax.quiver(self.p[0], self.p[1], self.p[2], self.scale_value*self.R[0, 2], self.scale_value*self.R[1, 2], self.scale_value*self.R[2, 2], color = "b", arrow_length_ratio = self.length_value )
+      
       return ax
