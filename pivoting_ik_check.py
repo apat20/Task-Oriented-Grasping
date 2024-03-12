@@ -201,6 +201,9 @@ def visualize(cloud_object):
     fig3 = plt.figure()
     ax3 = fig3.add_subplot(projection='3d')
     ax3.grid(False)
+    cloud_object.vertices = cloud_object.oriented_bounding_box_vertices
+    cloud_object.plot_cube()
+    ax3.add_collection3d(Poly3DCollection(cloud_object.faces, linewidths=1, edgecolors='b', alpha=.25))
     ax3.scatter(x_points, y_points, z_points, s = 0.2)
 
     # Base reference Frame:
@@ -363,6 +366,11 @@ if __name__ == "__main__":
 
     # Saving the necessary files:
     get_logs(cloud_object, data_dir)
+
+    print(cloud_object.dimensions)
+    print(cloud_object.x_dim)
+    print(cloud_object.y_dim)
+    print(cloud_object.z_dim)
 
     if args.visualize:
         visualize(cloud_object)
