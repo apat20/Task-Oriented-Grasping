@@ -18,6 +18,8 @@ from point_cloud_module.process_point_cloud import point_cloud
 
 from time import perf_counter
 import argparse
+from xmlrpc import client
+import threading
 
 # CUDA for PyTorch:
 device = "cpu"
@@ -131,6 +133,31 @@ def get_logs(cloud_object, data_dir):
 
     # Saving the Z and Y axes corresponding to the pregrasp pose:
     np.savetxt(f"{data_dir}/computed_end_effector_axes_inter_base.csv", cloud_object.computed_end_effector_axes_inter_base, delimiter=',')
+
+'''Function to send the grasp poses through RPC:'''
+def trigger_motion_generator(cloud_object, hostname):
+    # Saving the screw transformation for pivoting:
+    # Computing the final end-effector pose after grasping based on the screw axis:
+    pitch = 0
+    theta = math.radians(90)
+    g = get_transformation_for_screw(cloud_object.screw_axis, pitch, theta, cloud_object.point)
+
+    # Extracting the Z and the Y axis:
+    cloud_object.computed_end_effector_axes_base = np.asarray([np.reshape(np.asarray([pose[0:3, 2], pose[0:3, 1]]), [6]) for pose in cloud_object.computed_end_effector_poses_base])
+    cloud_object.computed_end_effector_axes_inter_base = np.asarray([np.reshape(np.asarray([pose[0:3, 2], pose[0:3, 1]]), [6]) for pose in cloud_object.computed_end_effector_poses_inter_base])
+    cloud_object.computed_end_effector_locations_base = np.asarray([pose[0:3, 3] for pose in cloud_object.computed_end_effector_poses_base])
+    cloud_object.computed_end_effector_locations_inter_base = np.asarray([pose[0:3, 3] for pose in cloud_object.computed_end_effector_poses_inter_base])
+
+    grasp_info = {
+        "screw_tf": g.tolist(),
+        "ee_axes": cloud_object.computed_end_effector_axes_base.tolist(),
+        "ee_pos": cloud_object.computed_end_effector_locations_base.tolist(),
+        "bbox_dimensions": np.reshape(cloud_object.dimensions, 3).tolist(),
+        "bbox_pose": cloud_object.g_bounding_box.tolist()
+    }
+
+    with client.ServerProxy(f"http://{hostname}:5000/") as proxy:
+        proxy.trigger_motion_generation(grasp_info)
 
 '''Function to visualize the results: '''
 def visualize(cloud_object):
@@ -284,6 +311,7 @@ if __name__ == "__main__":
     # Add a command-line argument for the input filename
     parser.add_argument('--filename', type=str, help='Path to the input point cloud file')
     parser.add_argument('--visualize', action='store_true', help='Enable visualize flag')
+    parser.add_argument('--hostname', type=str, help='Hostname of the computer running the motion generator', default='localhost')
 
     # Directory for saving the log files:
     data_dir = 'logs/'
@@ -299,14 +327,14 @@ if __name__ == "__main__":
     cloud_object = build_cloud_object(cloud_object, pcd)
 
     # Specifying gripper tolerances:
-    cloud_object.gripper_width_tolerance = 0.08
+    cloud_object.gripper_width_tolerance = 0.11
 
-    # Original tips:
+    # Panda default gripper tips:
     # cloud_object.gripper_height_tolerance = 0.041
 
     # cloud_object.gripper_height_tolerance = 0.03
 
-    # Blue tips:
+    # Custom gripper tips:
     cloud_object.gripper_height_tolerance = 0.07
 
     # Attributes to compute the location of the reference frame at the flange for the grasp pose and pre-grasp pose
@@ -365,16 +393,10 @@ if __name__ == "__main__":
     print("Number of end-effector poses computed: ", len(cloud_object.computed_end_effector_poses_base))
 
     # Saving the necessary files:
-    get_logs(cloud_object, data_dir)
+    # get_logs(cloud_object, data_dir)
 
-    print(cloud_object.dimensions)
-    print(cloud_object.x_dim)
-    print(cloud_object.y_dim)
-    print(cloud_object.z_dim)
+    # if args.visualize:
+    #     visualize(cloud_object)
 
-    if args.visualize:
-        visualize(cloud_object)
-
-    
-
-    
+    print("Triggering motion generator")
+    trigger_motion_generator(cloud_object, args.hostname)
