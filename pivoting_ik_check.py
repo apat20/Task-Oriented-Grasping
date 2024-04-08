@@ -1,4 +1,5 @@
 # Open3D for point cloud processing and visualization
+from __future__ import annotations
 import open3d as o3d
 
 import numpy as np
@@ -156,8 +157,136 @@ def trigger_motion_generator(cloud_object, hostname):
         "bbox_pose": cloud_object.g_bounding_box.tolist()
     }
 
-    with client.ServerProxy(f"http://{hostname}:5000/") as proxy:
-        proxy.trigger_motion_generation(grasp_info)
+    def log_result(
+            *args
+        # result: bool, message: str, ik_result: list[float] | None = None
+    ) -> bool:
+        print(args)
+        return True
+        if result:
+            logging.info("Feasibility check passed")
+            if ik_result is not None:
+                logging.info("IK solution: %s", ik_result)
+            return True
+        else:
+            logging.error(message)
+            return False
+
+    import logging
+    import spatialmath
+    logging.info("Received grasp information")
+
+    logging.basicConfig(level=logging.INFO)
+
+    # this is the transform between flange and TCP of the Panda
+    T_F_EE: spatialmath.SE3 = spatialmath.SE3(0, 0, 0.1034) * spatialmath.SE3.Rz(
+        -45, unit="deg"
+    )
+
+    # Pre grasp/Post grasp z-axis offset
+    pre_grasp_dist = 0.03
+
+
+    def homogeneous_to_waypoint(
+        T: np.ndarray, grasp: float
+    ) -> tuple[list[float], list[float], float]:
+        """Computes waypoint arguments given pose as homogeneous transform.
+
+        You may use this function to apply any necessary transforms."""
+        # TODO: the frame seems to be neither flange nor TCP, please investigate
+        se3 = spatialmath.SE3(T, check=False)
+        # we apply a 45 degree rotation around the *local* z-axis
+        se3 *= spatialmath.SE3.Rz(45, unit="deg")  # this fixes the orientation
+        return (se3.t.tolist(), spatialmath.UnitQuaternion(se3).vec.tolist(), grasp)
+
+    with client.ServerProxy(f"http://{hostname}:9000/") as proxy:
+        obs: dict[str, list[float]] = proxy.get_observation()  # type: ignore[assignment]
+        logging.info("Received observation %s", obs)
+        joint_positions = obs["panda_joint_pos"]
+
+        # Reload bounding box in sim
+        size = grasp_info["bbox_dimensions"]
+        size[:] = [dim / 2 for dim in size]
+        se3 = spatialmath.SE3(np.array(grasp_info["bbox_pose"]))
+        pos, quat = (se3.t, spatialmath.UnitQuaternion(se3).vec)
+        pose = (pos.tolist(), quat.tolist())
+        # proxy.reload_box(pose, size)
+
+        ee_base_pos_array = np.array(grasp_info["ee_pos"])
+        ee_base_axes_array = np.array(grasp_info["ee_axes"])
+
+        pre_grasp_tf = np.identity(4)
+        pre_grasp_tf[2, 3] = -pre_grasp_dist
+
+        bbox_pose = np.array(grasp_info["bbox_pose"])
+
+        screw_tf = np.matmul(bbox_pose, np.array(grasp_info["screw_tf"]))
+
+        approach_tf = np.identity(4)
+        approach_tf[2, 3] = 0.1
+
+        for idx, (ee_base_pos, ee_base_axis) in enumerate(
+            zip(ee_base_pos_array, ee_base_axes_array)
+        ):
+            ee_base_pose = np.identity(4)
+            ee_base_pose[0:3, 3] = ee_base_pos
+            ee_base_pose[0:3, 2] = ee_base_axis[0:3]
+
+            for axis_sign in [-1.0]:
+                ee_base_pose[0:3, 1] = axis_sign * ee_base_axis[3:6]
+                ee_base_pose[0:3, 0] = np.cross(
+                    ee_base_pose[0:3, 1], ee_base_pose[0:3, 2]
+                )
+
+                ee_base_pose_obj_frame = np.matmul(
+                    np.linalg.inv(bbox_pose), ee_base_pose
+                )
+
+                pre_grasp_pose = np.matmul(ee_base_pose, pre_grasp_tf)
+
+                goal_pose = np.matmul(screw_tf, ee_base_pose_obj_frame)
+
+                grasp_release_pose = np.matmul(goal_pose, pre_grasp_tf)
+
+                waypoints = []
+                waypoints.append(homogeneous_to_waypoint(pre_grasp_pose, 1))
+                waypoints.append(homogeneous_to_waypoint(ee_base_pose, 1))
+                waypoints.append(
+                    homogeneous_to_waypoint(ee_base_pose, 0)
+                )  # Grasp object
+                waypoints.append(homogeneous_to_waypoint(goal_pose, 0))
+                waypoints.append(
+                    homogeneous_to_waypoint(goal_pose, 1)
+                )  # Release object
+                waypoints.append(homogeneous_to_waypoint(grasp_release_pose, 1))
+
+                # Feasibility check of waypoints
+                logging.info("Checking feasibility of motion plan %d ...", idx)
+                motion_feasibile = log_result(
+                    *proxy.check_feasibility(waypoints, joint_positions, 5)
+                )  # q_init=joint_positions, n_points=5
+                logging.info(
+                    "Checking collision of motion plan %d with bounding box ...",
+                    idx,
+                )
+                no_bbox_collision = log_result(
+                    *proxy.check_box_collision(waypoints[1], 16)
+                )
+
+                # guiding_poses = np.concatenate([pre_grasp_pose, ee_base_pose, goal_pose, grasp_release_pose])
+                # np.savetxt("/home/dharun/guiding_poses.csv", guiding_poses, delimiter=',')
+
+                # proxy.add_waypoints(waypoints)
+                # return
+
+                if motion_feasibile and no_bbox_collision:
+                    logging.info("Sending waypoints to motion generator")
+                    proxy.add_waypoints(waypoints)
+                    return
+
+    logging.info("Motion not feasible for given waypoints")
+
+    return
 
 '''Function to visualize the results: '''
 def visualize(cloud_object):
